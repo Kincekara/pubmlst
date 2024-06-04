@@ -341,17 +341,17 @@ def main():
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
     # List
-    parser_list = subparsers.add_parser('list', help='list available schemes')
+    parser_list = subparsers.add_parser('list', help='list available organisms')
     parser_list.set_defaults(func=list)        
 
     # Search
     parser_search = subparsers.add_parser('search', help='send fasta query for MLST')
     parser_search.add_argument('--contigs', type=str, help='contigs or scaffolds file', required=True)
-    parser_search.add_argument('--scheme', type=str, help='scheme name', required=True)
+    parser_search.add_argument('--organism', type=str, help='sorganism name', required=True)
     
     # rMLST
     parser_rmlst = subparsers.add_parser('rmlst', help='rMLST Species identification')
-    parser_rmlst.add_argument('--contigs', type=str, required=True, help='Contigs information')
+    parser_rmlst.add_argument('--contigs', type=str, required=True, help='contigs or scaffolds file')
       
     args = parser.parse_args()
     
