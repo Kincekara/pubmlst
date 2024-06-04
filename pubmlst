@@ -347,7 +347,7 @@ def main():
     # Search
     parser_search = subparsers.add_parser('search', help='send fasta query for MLST')
     parser_search.add_argument('--contigs', type=str, help='contigs or scaffolds file', required=True)
-    parser_search.add_argument('--organism', type=str, help='sorganism name', required=True)
+    parser_search.add_argument('--organism', type=str, help='organism group name (hint: "pubmlst list")', required=True)
     
     # rMLST
     parser_rmlst = subparsers.add_parser('rmlst', help='rMLST Species identification')
@@ -359,7 +359,7 @@ def main():
         list_schemes()
     elif args.command == "search":
         try:
-            mlst(args.scheme, args.contigs)
+            mlst(args.organism, args.contigs)
         except TypeError:
             parser_search.print_help()
     elif args.command == "rmlst":
