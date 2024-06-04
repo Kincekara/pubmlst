@@ -1,5 +1,7 @@
 # pubmlst
-A simple python wrapper for querying sequences on PubMLST via RESTful API
+[![docker size](https://badgen.net/docker/size/kincekara/pubmlst/0.1?icon=docker&label=Docker)](https://hub.docker.com/r/kincekara/pubmlst/tags)
+
+A simple python wrapper for querying sequences on PubMLST via RESTful API.
 
 ## Requirements
 Python3 on the path and requests module are required to run pubmlst script.
