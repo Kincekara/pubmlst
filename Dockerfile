@@ -7,6 +7,8 @@ LABEL dockerfile.version="1"
 LABEL software="pubmlst"
 LABEL software.version=$PUBMLST.PY_VER
 LABEL description="Query contigs on PubMLST via RESTful API"
+LABEL website="https://github.com/Kincekara/pubmlst"
+LABEL license="https://github.com/Kincekara/pubmlst/LICENSE"
 LABEL maintainer="Kutluhan Incekara"
 LABEL maintainer.email="kutluhan.incekara@ct.gov"
 
