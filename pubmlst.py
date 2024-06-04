@@ -1,0 +1,371 @@
+#!/usr/bin/env python3
+
+# Query contigs on PubMLST via RESTful API
+# Author: Kutluhan Incekara (kutluhan.incekara@ct.gov)
+# 2024-05-31
+
+import sys, requests, argparse, base64, json
+
+db = {'Achromobacter spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_achromobacter_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Acinetobacter baumannii': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_abaumannii_seqdef/schemes/1',
+   'description': 'MLST (Oxford)'},
+  {'scheme': 'https://rest.pubmlst.org/db/pubmlst_abaumannii_seqdef/schemes/2',
+   'description': 'MLST (Pasteur)'}],
+ 'Aeromonas spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_aeromonas_seqdef/schemes/1'}],
+ 'Aggregatibacter actinomycetemcomitans': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_aactinomycetemcomitans_seqdef/schemes/1'}],
+ 'Anaplasma phagocytophilum': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_aphagocytophilum_seqdef/schemes/1'}],
+ 'Arcobacter spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_arcobacter_seqdef/schemes/1'}],
+ 'Aspergillus fumigatus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_afumigatus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Avibacterium paragallinarum': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_aparagallinarum_seqdef/schemes/1'}],
+ 'Bacillus cereus': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_bcereus_seqdef/schemes/1'}],
+ 'Bacillus licheniformis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_blicheniformis_seqdef/schemes/14'}],
+ 'Bacillus subtilis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_bsubtilis_seqdef/schemes/1'}],
+ 'Lactococcus lactis 936-like bacteriophage': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_llactis_phage_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Bacteroides fragilis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_bfragilis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Bartonella bacilliformis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_bbacilliformis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Bartonella henselae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_bhenselae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Bartonella washoensis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_bwashoensis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Borrelia spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_borrelia_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Burkholderia cepacia complex': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_bcc_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Burkholderia pseudomallei': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_bpseudomallei_seqdef/schemes/1'}],
+ 'Campylobacter jejuni/coli': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Candida albicans': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_calbicans_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Candida glabrata': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Candida krusei': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_ckrusei_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Candida tropicalis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_ctropicalis_seqdef/schemes/1'}],
+ 'Carnobacterium maltaromaticum': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_cmaltaromaticum_seqdef/schemes/1'}],
+ 'Citrobacter spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_cfreundii_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Clonorchis sinensis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_csinensis_seqdef/schemes/1'}],
+ 'Clostridioides difficile': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_cdifficile_seqdef/schemes/1'}],
+ 'Clostridium botulinum': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_cbotulinum_seqdef/schemes/1'}],
+ 'Clostridium perfringens': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_cperfringens_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Clostridium septicum': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_csepticum_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Cronobacter spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_cronobacter_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Cutibacterium acnes': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_pacnes_seqdef/schemes/3'}],
+ 'Dichelobacter nodosus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_dnodosus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Edwardsiella spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_edwardsiella_seqdef/schemes/1'}],
+ 'Enterobacter cloacae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_ecloacae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Enterococcus faecalis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_efaecalis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Enterococcus faecium': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_efaecium_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Escherichia spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_escherichia_seqdef/schemes/1',
+   'description': 'MLST (Achtman)'},
+  {'scheme': 'https://rest.pubmlst.org/db/pubmlst_escherichia_seqdef/schemes/2',
+   'description': 'MLST (Pasteur)'}],
+ 'Flavobacterium psychrophilum': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_fpsychrophilum_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Gallibacterium anatis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_gallibacterium_seqdef/schemes/1'}],
+ 'Geotrichum spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_geotrichum_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Glaesserella parasuis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_hparasuis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Haemophilus influenzae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_hinfluenzae_seqdef/schemes/1'}],
+ 'Helicobacter cinaedi': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_hcinaedi_seqdef/schemes/1'}],
+ 'Helicobacter pylori': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_helicobacter_seqdef/schemes/1'}],
+ 'Helicobacter suis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_hsuis_seqdef/schemes/1'}],
+ 'Klebsiella aerogenes': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_kaerogenes_seqdef/schemes/1'}],
+ 'Klebsiella oxytoca': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_koxytoca_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Kudoa septempunctata': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_kseptempunctata_seqdef/schemes/1'}],
+ 'Lactobacillus salivarius': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_lsalivarius_seqdef/schemes/1'}],
+ 'Lactococcus garvieae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_lgarvieae_seqdef/schemes/1'}],
+ 'Candidatus Liberibacter solanacearum': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_liberibacter_seqdef/schemes/1'}],
+ 'Macrococcus canis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_mcanis_seqdef/schemes/1'}],
+ 'Macrococcus caseolyticus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mcaseolyticus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mammaliicoccus sciuri': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_msciuri_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mannheimia haemolytica': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mhaemolytica_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Melissococcus plutonius': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mplutonius_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycobacteria spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2'}],
+ 'Mycobacteroides abscessus complex': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mabscessus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma agalactiae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_magalactiae_seqdef/schemes/1'}],
+ 'Mycoplasma anserisalpingitidis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_manserisalpingitidis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma bovis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mbovis_seqdef/schemes/2',
+   'description': 'MLST'}],
+ 'Mycoplasma flocculare': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mflocculare_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma genitalium': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_mgenitalium_seqdef/schemes/2'}],
+ 'Mycoplasma hominis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mhominis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma hyopneumoniae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mhyopneumoniae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma hyorhinis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_mhyorhinis_seqdef/schemes/1'}],
+ 'Mycoplasma hyosynoviae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_mhyosynoviae_seqdef/schemes/1'}],
+ 'Mycoplasma iowae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_miowae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma pneumoniae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_mpneumoniae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Mycoplasma synoviae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_msynoviae_seqdef/schemes/1'}],
+ 'Neisseria spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/1'}],
+ 'Orientia tsutsugamushi': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_otsutsugamushi_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Ornithobacterium rhinotracheale': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_orhinotracheale_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Paenibacillus larvae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_plarvae_seqdef/schemes/1'}],
+ 'Pediococcus pentosaceus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_ppentosaceus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Photobacterium damselae': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_pdamselae_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Piscirickettsia salmonis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_psalmonis_seqdef/schemes/1'}],
+ 'Porphyromonas gingivalis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_pgingivalis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Proteus spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_proteus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Pseudomonas aeruginosa': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_paeruginosa_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Pseudomonas fluorescens': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_pfluorescens_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Pseudomonas putida': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_pputida_seqdef/schemes/1'}],
+ 'Riemerella anatipestifer': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_ranatipestifer_seqdef/schemes/1'}],
+ 'Rhodococcus spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_rhodococcus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Salmonella spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_salmonella_seqdef/schemes/2'}],
+ 'Saprolegnia parasitica': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_sparasitica_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Serratia spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_serratia_seqdef/schemes/1'}],
+ 'Shewanella spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_shewanella_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Sinorhizobium spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_sinorhizobium_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Stenotrophomonas maltophilia': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_smaltophilia_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Staphylococcus aureus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Staphylococcus chromogenes': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_schromogenes_seqdef/schemes/1'}],
+ 'Staphylococcus epidermidis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_sepidermidis_seqdef/schemes/1'}],
+ 'Staphylococcus haemolyticus': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_shaemolyticus_seqdef/schemes/1'}],
+ 'Staphylococcus hominis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_shominis_seqdef/schemes/1'}],
+ 'Staphylococcus pseudintermedius': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_spseudintermedius_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Streptococcus agalactiae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/schemes/1'}],
+ 'Streptococcus bovis/equinus complex (SBSEC)': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_sbsec_seqdef/schemes/1'}],
+ 'Streptococcus canis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_scanis_seqdef/schemes/1'}],
+ 'Streptococcus dysgalactiae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_sdysgalactiae_seqdef/schemes/1'}],
+ 'Streptococcus gallolyticus': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_sgallolyticus_seqdef/schemes/1'}],
+ 'Streptococcus iniae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_siniae_seqdef/schemes/1'}],
+ 'Streptococcus mitis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_smitis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Streptococcus pneumoniae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_spneumoniae_seqdef/schemes/1'}],
+ 'Streptococcus pyogenes': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_spyogenes_seqdef/schemes/1'}],
+ 'Streptococcus suis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_ssuis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Streptococcus thermophilus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_sthermophilus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Streptococcus uberis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_suberis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Streptococcus zooepidemicus': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_szooepidemicus_seqdef/schemes/1'}],
+ 'Streptomyces spp': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_streptomyces_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Taylorella spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_taylorella_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Tenacibaculum spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_tenacibaculum_seqdef/schemes/1'}],
+ 'Tricohomas vaginalis': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_tvaginalis_seqdef/schemes/1'}],
+ 'Ureaplasma spp.': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_ureaplasma_seqdef/schemes/1'}],
+ 'Vibrio cholerae': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_vcholerae_seqdef/schemes/1'}],
+ 'Vibrio spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_vibrio_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Vibrio parahaemolyticus': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_vparahaemolyticus_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Vibrio tapetis': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_vtapetis_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Vibrio vulnificus': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_vvulnificus_seqdef/schemes/1'}],
+ 'Wolbachia spp.': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_wolbachia_seqdef/schemes/1',
+   'description': 'MLST'}],
+ 'Xylella fastidiosa': [{'description': 'MLST',
+   'scheme': 'https://rest.pubmlst.org/db/pubmlst_xfastidiosa_seqdef/schemes/1'}],
+ 'Yersinia ruckeri': [{'scheme': 'https://rest.pubmlst.org/db/pubmlst_yruckeri_seqdef/schemes/1',
+   'description': 'MLST'}]}
+
+def list_schemes():
+    for i in db.keys():
+        print(i)
+
+def mlst(scheme, file):
+    try:
+        with open(file, "r") as f:
+            contigs = f.read()
+    except FileNotFoundError:
+        print (file, "file was not found!")
+        sys.exit(1)
+
+    if scheme not in db.keys():
+        print("scheme not found! Please check available schemes with 'list' argument")
+        sys.exit(1) 
+    
+    print("Sending request, please wait...\n")
+    payload = '{"base64":true,"details":true,"sequence":"' + base64.b64encode(contigs.encode()).decode() + '"}'
+    with open("mlst.out", "a") as f:
+        for i in db[scheme]:        
+            uri = i['scheme'] + "/sequence"
+            response = requests.post(uri, data=payload)
+            if response.status_code == requests.codes.ok:
+                data = response.json()
+                with open(i['description'] + ".json", "w") as j:
+                    json.dump(data, j)
+                f.write(i['description'] + ":\n")
+                print(i['description'] + ":")
+                try:
+                    for key, value in data['fields'].items():
+                        f.write(key + " " + value + "\n")
+                        print(key, value)
+                except KeyError:
+                    f.write("No match\n")
+                    print("No match")
+                f.write("\n")
+            else:
+                print(response.text)
+
+def rmlst(file):
+    try:
+        with open(file, "r") as f:
+            contigs = f.read()
+    except FileNotFoundError:
+        print (file, "file was not found!")
+        sys.exit(1)
+
+    print("Sending request, please wait...")
+    payload = '{"base64":true,"details":true,"sequence":"' + base64.b64encode(contigs.encode()).decode() + '"}'
+    uri = 'http://rest.pubmlst.org/db/pubmlst_rmlst_seqdef_kiosk/schemes/1/sequence'
+    response = requests.post(uri, data=payload)
+    if response.status_code == requests.codes.ok:
+        print("Successful!\n")  
+        data = response.json()
+        with open("rmlst.json", "w") as j:
+            json.dump(data, j)
+        try: 
+            data['taxon_prediction']
+        except KeyError:
+            print("No match")
+            with open("rmlst.out", "w")as o:
+                o.write("No match")
+            sys.exit(0)       
+        for match in data['taxon_prediction']:
+            print("Rank: " + match['rank'])
+            print("Taxon:" + match['taxon'])
+            print("Support:" + str(match['support']) + "%")
+            print("Taxonomy" + match['taxonomy'] + "\n")
+        with open("rmlst.out", "w") as r:
+            r.write("Rank: " + match['rank'] + "\n")
+            r.write("Taxon:" + match['taxon'] + "\n")
+            r.write("Support:" + str(match['support']) + "%\n")
+            r.write("Taxonomy" + match['taxonomy'] + "\n\n")     
+    else:
+        print(response.text)
+
+def main():
+    parser = argparse.ArgumentParser(description='Process some commands.')
+    parser.add_argument('--version', action='version', version='%(prog)s version 0.1')
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # List
+    parser_list = subparsers.add_parser('list', help='list available schemes')
+    parser_list.set_defaults(func=list)        
+
+    # Search
+    parser_search = subparsers.add_parser('search', help='send fasta query for MLST')
+    parser_search.add_argument('--contigs', type=str, help='contigs or scaffolds file', required=True)
+    parser_search.add_argument('--scheme', type=str, help='scheme name', required=True)
+    
+    # rMLST
+    parser_rmlst = subparsers.add_parser('rmlst', help='rMLST Species identification')
+    parser_rmlst.add_argument('--contigs', type=str, required=True, help='Contigs information')
+      
+    args = parser.parse_args()
+    
+    if args.command == "list":
+        list_schemes()
+    elif args.command == "search":
+        try:
+            mlst(args.scheme, args.contigs)
+        except TypeError:
+            parser_search.print_help()
+    elif args.command == "rmlst":
+        rmlst(args.contigs)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
